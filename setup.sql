@@ -1,22 +1,23 @@
-create table person (
-    person_id integer primary key,
-    name varchar(20) not null
+pragma foreign_keys = on;
+
+create table MenuItem (
+    id bigint primary key,
+    item_name text not null,
+    price bigint not null,
+    base_soda text not null
 );
 
-create table phone (
-    phone_id integer primary key,
-    person_id integer not null,
-    area_code int not null,
-    number int not null,
-    can_recieve_sms tinyint not null,
-    foreign key (person_id) references person (person_id)
+create table Ingredient (
+    id bigint primary key,
+    flavor text not null,
+    ingredient_type text not null check (ingredient_type in ('syrup', 'fresh_fruit', 'cream', 'candy'))
 );
 
-create table address (
-    address_id integer primary key,
-    person_id integer not null,
-    street varchar(50),
-    zip integer not null
+create table MenuItem_Ingredient (
+    menuItem_id bigint not null references MenuItem(id),
+    ingredient_id bigint not null references Ingredient(id),
+    quantity integer not null default 1,
+    primary key (menuItem_id, ingredient_id)
 );
 
 create table zip (
