@@ -40,6 +40,18 @@ def runSql(query):
     result = sqliteCursor.execute(query).fetchall()
     return result
 
+# Load sql Agent Prompt File
+sqlAgentPromptPath = getPath("sqlAgentPrompt.txt")
+
+with open(sqlAgentPromptPath, encoding="utf-8") as promptFile:
+    sqlAgentPrompt = promptFile.read().strip()
+
+# Load sql Agent Prompt File
+responsePromptPath = getPath("responsePrompt.txt")
+
+with open(responsePromptPath, encoding="utf-8") as promptFile:
+    responsePrompt = promptFile.read().strip()
+
 # OPENAI
 configPath = getPath("config.json")
 print(configPath)
@@ -50,10 +62,12 @@ openAiClient = OpenAI(api_key = config["openaiKey"])
 openAiClient.models.list() # check if the key is valid (update in config.json)
 chosen_model = "gpt-4o"
 
-def getChatGptResponse(content):
+def getChatGptResponse(content, prompt):
     stream = openAiClient.chat.completions.create(
         model=chosen_model,
-        messages=[{"role": "user", "content": content}],
+        messages=[
+            {"role": "system", "content": prompt},
+            {"role": "user", "content": content}],
         stream=True,
     )
 
@@ -77,17 +91,17 @@ strategies = {
      # TODO add strategies as descirbed in the paper (multi-domain)              
 }
 
-questions = [
-    "Which are the most awarded dogs?",
-    # "Which dogs have multiple owners?",
-    # "Which people have multiple dogs?",
-    # "What are the top 3 cities represented?",
-    # "What are the names and cities of the dogs who have awards?",
-    # "Who has more than one phone number?",
-    "Who doesn't have a way for us to text them?",
-    "Will we have a problem texting any of the previous award winners?"
-    # "I need insert sql into my tables can you provide good unique data?"
-]
+# questions = [
+#     "Which are the most awarded dogs?",
+#     # "Which dogs have multiple owners?",
+#     # "Which people have multiple dogs?",
+#     # "What are the top 3 cities represented?",
+#     # "What are the names and cities of the dogs who have awards?",
+#     # "Who has more than one phone number?",
+#     "Who doesn't have a way for us to text them?",
+#     "Will we have a problem texting any of the previous award winners?"
+#     # "I need insert sql into my tables can you provide good unique data?"
+# ]
 
 
 # use the markdown for the sql syntax to find the SQL query
@@ -120,7 +134,7 @@ for strategy in strategies:
         error = "None"
         try:
             getSqlFromQuestionEngineeredPrompt = strategies[strategy] + " " + question
-            sqlSyntaxResponse = getChatGptResponse(getSqlFromQuestionEngineeredPrompt)
+            sqlSyntaxResponse = getChatGptResponse(getSqlFromQuestionEngineeredPrompt, sqlAgentPrompt)
             sqlSyntaxResponse = sanitizeForJustSql(sqlSyntaxResponse)
             print("SQL Syntax Response:")
             print(sqlSyntaxResponse)
@@ -128,10 +142,8 @@ for strategy in strategies:
             print("Query Raw Response:")
             print(queryRawResponse)
 
-            # TODO this prompt is insufficient. ChatGPT doesn't have all the context that it needs.
-            # What context would help the friendly response be more successful? Can you fix it?
-            friendlyResultsPrompt = "I asked a question \"" + question +"\" and the response was \""+queryRawResponse+"\" Please, just give a concise response in a more friendly way? Please do not give any other suggests or chatter."
-            friendlyResponse = getChatGptResponse(friendlyResultsPrompt)
+            question_and_db_response = "Question: \"" + question +"\" Database response: \""+queryRawResponse
+            friendlyResponse = getChatGptResponse(question_and_db_response, responsePrompt)
             print("Friendly Response:")
             print(friendlyResponse)
         except Exception as err:
