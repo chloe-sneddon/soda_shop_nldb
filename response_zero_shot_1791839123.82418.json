@@ -1,0 +1,13 @@
+{
+  "strategy": "zero_shot",
+  "prompt_prefix": "pragma foreign_keys = on;\n\ncreate table menu_item (\n    menu_item_id bigint primary key,\n    item_name varchar(255),\n    price mediumint,\n    base_soda varchar(255)\n);\n\ncreate table Ingredient (\n    id bigint primary key,\n    flavor text not null,\n    ingredient_type text not null check (ingredient_type in ('syrup', 'fresh_fruit', 'cream', 'candy'))\n);\n\ncreate table employee (\n    employee_id bigint primary key,\n    first_name varchar(255),\n    last_name varchar(255),\n    hourly_pay bigint\n);\n\ncreate table customer (\n    customer_id bigint primary key,\n    first_name varchar(255),\n    last_name varchar(255),\n    birthdate date,\n    phone_number bigint\n);\n\ncreate table receipt (\n    receipt_id bigint primary key,\n    employee_id bigint not null,\n    customer_id bigint not null,\n    subtotal bigint,\n    tip bigint,\n    tax bigint,\n    foreign key (employee_id) references employee (employee_id),\n    foreign key (customer_id) references customer (customer_id)\n);\n\ncreate table menu_item_ingredient (\n    menu_item_id bigint not null,\n    ingredient_id bigint not null,\n    quantity bigint,\n    primary key (menu_item_id, ingredient_id),\n    foreign key (menu_item_id) references menu_item (menu_item_id),\n    foreign key (ingredient_id) references ingredient (id)\n);\n\ncreate table receipt_item (\n    receipt_item_id bigint primary key,\n    menu_item_id bigint not null,\n    receipt_id bigint not null,\n    price_at_sale bigint,\n    foreign key (menu_item_id) references menu_item (menu_item_id),\n    foreign key (receipt_id) references receipt (receipt_id)\n);\n\ncreate table receipt_item_addin (\n    receipt_item_id bigint not null,\n    ingredient_id bigint not null,\n    quantity bigint,\n    primary key (receipt_item_id, ingredient_id),\n    foreign key (receipt_item_id) references receipt_item (receipt_item_id),\n    foreign key (ingredient_id) references ingredient (id)\n);\n Give me a sqlite select statement that answers the question. Only respond with sqlite syntax. If there is an error do not explain it!",
+  "questionResults": [
+    {
+      "question": "What drink is the most sold?",
+      "sql": "SELECT mi.item_name, COUNT(*) AS total_sold\nFROM receipt_item ri\nJOIN menu_item mi ON ri.menu_item_id = mi.menu_item_id\nGROUP BY mi.menu_item_id\nORDER BY total_sold DESC\nLIMIT 1;",
+      "queryRawResponse": "[('Mango Citrus Cooler', 2)]",
+      "friendlyResponse": "The most sold drink is the \"Mango Citrus Cooler.\"",
+      "error": "None"
+    }
+  ]
+}

@@ -1,0 +1,27 @@
+{
+  "strategy": "single_domain_double_shot",
+  "prompt_prefix": "pragma foreign_keys = on;\n\ncreate table menu_item (\n    menu_item_id bigint primary key,\n    item_name varchar(255),\n    price mediumint,\n    base_soda varchar(255)\n);\n\ncreate table Ingredient (\n    id bigint primary key,\n    flavor text not null,\n    ingredient_type text not null check (ingredient_type in ('syrup', 'fresh_fruit', 'cream', 'candy'))\n);\n\ncreate table employee (\n    employee_id bigint primary key,\n    first_name varchar(255),\n    last_name varchar(255),\n    hourly_pay bigint\n);\n\ncreate table customer (\n    customer_id bigint primary key,\n    first_name varchar(255),\n    last_name varchar(255),\n    birthdate date,\n    phone_number bigint\n);\n\ncreate table receipt (\n    receipt_id bigint primary key,\n    employee_id bigint not null,\n    customer_id bigint not null,\n    subtotal bigint,\n    tip bigint,\n    tax bigint,\n    foreign key (employee_id) references employee (employee_id),\n    foreign key (customer_id) references customer (customer_id)\n);\n\ncreate table menu_item_ingredient (\n    menu_item_id bigint not null,\n    ingredient_id bigint not null,\n    quantity bigint,\n    primary key (menu_item_id, ingredient_id),\n    foreign key (menu_item_id) references menu_item (menu_item_id),\n    foreign key (ingredient_id) references ingredient (id)\n);\n\ncreate table receipt_item (\n    receipt_item_id bigint primary key,\n    menu_item_id bigint not null,\n    receipt_id bigint not null,\n    price_at_sale bigint,\n    foreign key (menu_item_id) references menu_item (menu_item_id),\n    foreign key (receipt_id) references receipt (receipt_id)\n);\n\ncreate table receipt_item_addin (\n    receipt_item_id bigint not null,\n    ingredient_id bigint not null,\n    quantity bigint,\n    primary key (receipt_item_id, ingredient_id),\n    foreign key (receipt_item_id) references receipt_item (receipt_item_id),\n    foreign key (ingredient_id) references ingredient (id)\n);\n Who doesn't have a way for us to text them?  \nSELECT p.person_id, p.name\nFROM person p\nLEFT JOIN phone ph ON p.person_id = ph.person_id AND ph.can_recieve_sms = 1\nWHERE ph.phone_id IS NULL;\n  Give me a sqlite select statement that answers the question. Only respond with sqlite syntax. If there is an error do not explain it!",
+  "questionResults": [
+    {
+      "question": "What drink is the most sold?",
+      "sql": "SELECT mi.item_name, COUNT(ri.receipt_item_id) AS sold_count\nFROM menu_item mi\nJOIN receipt_item ri ON mi.menu_item_id = ri.menu_item_id\nGROUP BY mi.menu_item_id\nORDER BY sold_count DESC\nLIMIT 1;",
+      "queryRawResponse": "[('Mango Citrus Cooler', 2)]",
+      "friendlyResponse": "The most sold drink is the Mango Citrus Cooler.",
+      "error": "None"
+    },
+    {
+      "question": "What ingredient is used in the most items?",
+      "sql": "SELECT i.flavor, COUNT(mi.ingredient_id) AS item_count\nFROM menu_item_ingredient mi\nJOIN ingredient i ON mi.ingredient_id = i.id\nGROUP BY i.id\nORDER BY item_count DESC\nLIMIT 1;",
+      "queryRawResponse": "[('Vanilla', 3)]",
+      "friendlyResponse": "The ingredient used in the most items is vanilla, which appears in three different items.",
+      "error": "None"
+    },
+    {
+      "question": "Who visits the shop most frequently?",
+      "sql": "SELECT c.customer_id, c.first_name, c.last_name, COUNT(r.receipt_id) AS visit_count\nFROM customer c\nJOIN receipt r ON c.customer_id = r.customer_id\nGROUP BY c.customer_id\nORDER BY visit_count DESC\nLIMIT 1;",
+      "queryRawResponse": "[(5, 'Jordan', 'Malone', 1)]",
+      "friendlyResponse": "The most frequent visitor to the shop is Jordan Malone, visiting once.",
+      "error": "None"
+    }
+  ]
+}
